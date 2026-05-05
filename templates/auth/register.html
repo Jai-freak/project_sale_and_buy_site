@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}Register — CampusMarket{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+
+        <div class="auth-card">
+          <div class="auth-card-header text-center">
+            <i class="fas fa-user-plus fa-3x text-orange mb-3"></i>
+            <h2 class="fw-800">Create Account</h2>
+            <p class="text-white-70 mb-0">Join CampusMarket — post projects &amp; bid on others</p>
+          </div>
+
+          <div class="auth-card-body">
+            <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+
+              <div class="row g-3">
+                <div class="col-sm-6">
+                  <label class="form-label fw-600">Full Name <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-user text-muted"></i></span>
+                    <input type="text" name="name" class="form-control"
+                           placeholder="Rahul Sharma"
+                           value="{{ form_data.get('name','') }}" required autofocus />
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label fw-600">College</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-university text-muted"></i></span>
+                    <input type="text" name="college" class="form-control"
+                           placeholder="IIT Delhi"
+                           value="{{ form_data.get('college','') }}" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-3">
+                <label class="form-label fw-600">Email Address <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="fas fa-envelope text-muted"></i></span>
+                  <input type="email" name="email" class="form-control"
+                         placeholder="you@college.edu"
+                         value="{{ form_data.get('email','') }}" required />
+                </div>
+              </div>
+
+              <div class="row g-3 mt-1">
+                <div class="col-sm-6">
+                  <label class="form-label fw-600">Password <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <input type="password" name="password" id="pw1"
+                           class="form-control" placeholder="Min 8 characters" required />
+                    <button type="button" class="input-group-text bg-white"
+                            onclick="togglePassword('pw1',this)">
+                      <i class="fas fa-eye text-muted"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="col-sm-6">
+                  <label class="form-label fw-600">Confirm Password <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <input type="password" name="confirm_password" id="pw2"
+                           class="form-control" placeholder="Repeat password" required />
+                    <button type="button" class="input-group-text bg-white"
+                            onclick="togglePassword('pw2',this)">
+                      <i class="fas fa-eye text-muted"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Password strength bar -->
+              <div class="mt-2 mb-1">
+                <div class="progress" style="height:4px">
+                  <div id="strengthBar" class="progress-bar" style="width:0%"></div>
+                </div>
+                <small id="strengthLabel" class="text-muted"></small>
+              </div>
+
+              <!-- Info box -->
+              <div class="alert alert-info border-0 small py-2 px-3 mt-3 mb-4">
+                <i class="fas fa-info-circle me-1"></i>
+                With one account you can <strong>post projects</strong> and also
+                <strong>bid on others' projects</strong> — no role switching needed.
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100 btn-lg fw-600">
+                <i class="fas fa-user-plus me-2"></i>Create My Account
+              </button>
+
+              <p class="small text-muted text-center mt-3 mb-0">
+                By registering you agree to our Terms of Service.
+              </p>
+            </form>
+          </div>
+
+          <div class="auth-card-footer text-center">
+            <p class="mb-0 text-muted">
+              Already have an account?
+              <a href="{{ url_for('auth.login') }}" class="fw-600 text-orange">Log in</a>
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('pw1').addEventListener('input', function () {
+  const val = this.value;
+  const bar = document.getElementById('strengthBar');
+  const lbl = document.getElementById('strengthLabel');
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+  const colors = ['', 'danger', 'warning', 'info', 'success'];
+  bar.style.width = (score * 25) + '%';
+  bar.className = `progress-bar bg-${colors[score] || 'secondary'}`;
+  lbl.textContent = labels[score] || '';
+});
+</script>
+{% endblock %}

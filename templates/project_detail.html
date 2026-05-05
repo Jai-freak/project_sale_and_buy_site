@@ -1,0 +1,368 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.title }} — CampusMarket{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('main.browse_projects') }}">Projects</a></li>
+      <li class="breadcrumb-item active">{{ project.title[:50] }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+      <!-- Project Header -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+            <span class="badge status-{{ project.status }} fs-6">{{ project.status.replace('_',' ')|title }}</span>
+            <small class="text-muted">Posted {{ project.created_at.strftime('%B %d, %Y') }}</small>
+          </div>
+          <h2 class="fw-800 mb-3">{{ project.title }}</h2>
+          <div class="project-description mb-4">
+            {{ project.description | replace('\n', '<br>') | safe }}
+          </div>
+
+          {% if project.skills_list %}
+          <div class="mb-3">
+            <div class="fw-600 small text-muted mb-2">Required Skills</div>
+            {% for sk in project.skills_list %}
+            <span class="skill-tag">{{ sk }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if project.tags_list %}
+          <div>
+            <div class="fw-600 small text-muted mb-2">Tags</div>
+            {% for tag in project.tags_list %}
+            <span class="badge bg-light text-muted border me-1">{{ tag }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Files -->
+      {% if files %}
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+          <h6 class="fw-700 mb-0"><i class="fas fa-paperclip me-2 text-primary"></i>Files ({{ files|length }})</h6>
+        </div>
+        <div class="card-body p-0">
+          {% for f in files %}
+          <div class="d-flex align-items-center justify-content-between p-3 {% if not loop.last %}border-bottom{% endif %}">
+            <div class="d-flex align-items-center gap-3">
+              <div class="file-icon">
+                <i class="fas fa-file{% if f.original_filename.endswith('.pdf') %}-pdf text-danger{% elif f.original_filename.endswith('.zip') or f.original_filename.endswith('.rar') %}-archive text-warning{% elif f.original_filename.endswith('.py') %}-code text-primary{% else %} text-secondary{% endif %} fa-lg"></i>
+              </div>
+              <div>
+                <div class="fw-600 small">{{ f.original_filename }}</div>
+                <div class="text-muted" style="font-size:11px">
+                  {{ f.file_size_human }} · v{{ f.version }}
+                  · Uploaded by {{ f.uploader.name }}
+                  · {{ f.created_at.strftime('%b %d, %H:%M') }}
+                </div>
+                {% if f.description %}<div class="text-muted small">{{ f.description }}</div>{% endif %}
+              </div>
+            </div>
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('main.download_file', file_id=f.id) }}"
+               class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-download"></i>
+            </a>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Upload File (helper on in_progress project) -->
+      {% if current_user.is_authenticated and current_user.id != project.student_id
+         and project.status == 'in_progress' and project.selected_bid_id %}
+        {% set sel = project.selected_bid %}
+        {% if sel and sel.helper_id == current_user.id %}
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-white py-3">
+            <h6 class="fw-700 mb-0"><i class="fas fa-upload me-2 text-success"></i>Upload Deliverable</h6>
+          </div>
+          <div class="card-body">
+            <form method="POST" action="{{ url_for('helper.upload_file', project_id=project.id) }}"
+                  enctype="multipart/form-data" class="row g-3">
+              <div class="col-md-5">
+                <input type="file" name="file" class="form-control" required />
+              </div>
+              <div class="col-md-5">
+                <input type="text" name="description" class="form-control" placeholder="File description (optional)" />
+              </div>
+              <div class="col-md-2">
+                <button type="submit" class="btn btn-success w-100">Upload</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+      {% endif %}
+
+      <!-- Upload File (student on their own project) -->
+      {% if current_user.is_authenticated and current_user.id == project.student_id %}
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+          <h6 class="fw-700 mb-0"><i class="fas fa-upload me-2 text-primary"></i>Upload Requirement File</h6>
+        </div>
+        <div class="card-body">
+          <form method="POST" action="{{ url_for('student.upload_file', project_id=project.id) }}"
+                enctype="multipart/form-data" class="row g-3">
+            <div class="col-md-5">
+              <input type="file" name="file" class="form-control" required />
+            </div>
+            <div class="col-md-5">
+              <input type="text" name="description" class="form-control" placeholder="Description (optional)" />
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary w-100">Upload</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Milestones -->
+      {% if milestones %}
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+          <h6 class="fw-700 mb-0"><i class="fas fa-tasks me-2 text-primary"></i>Milestones</h6>
+        </div>
+        <div class="card-body p-0">
+          {% for m in milestones %}
+          <div class="d-flex align-items-center gap-3 p-3 {% if not loop.last %}border-bottom{% endif %}">
+            <div class="milestone-icon
+              {% if m.status=='completed' %}bg-success{% elif m.status=='in_progress' %}bg-warning{% else %}bg-light border{% endif %}">
+              <i class="fas {% if m.status=='completed' %}fa-check text-white{% elif m.status=='in_progress' %}fa-spinner fa-spin text-dark{% else %}fa-circle text-muted{% endif %}"></i>
+            </div>
+            <div class="flex-grow-1">
+              <div class="fw-600">{{ m.title }}</div>
+              {% if m.description %}<div class="text-muted small">{{ m.description }}</div>{% endif %}
+            </div>
+            {% if m.amount %}<span class="badge bg-success-soft text-success">₹{{ m.amount|int }}</span>{% endif %}
+            <span class="badge status-{{ m.status }}">{{ m.status.replace('_',' ')|title }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Reviews -->
+      {% if reviews %}
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+          <h6 class="fw-700 mb-0"><i class="fas fa-star me-2 text-warning"></i>Reviews</h6>
+        </div>
+        <div class="card-body p-0">
+          {% for r in reviews %}
+          <div class="p-3 {% if not loop.last %}border-bottom{% endif %}">
+            <div class="d-flex justify-content-between mb-1">
+              <div class="d-flex align-items-center gap-2">
+                <div class="nav-avatar small-avatar">{{ r.reviewer.name[0].upper() }}</div>
+                <span class="fw-600 small">{{ r.reviewer.name }}</span>
+                <span class="text-muted small">→</span>
+                <span class="small">{{ r.reviewee.name }}</span>
+              </div>
+              <span class="text-warning">{{ '★' * r.rating }}{{ '☆' * (5-r.rating) }}</span>
+            </div>
+            {% if r.comment %}<p class="text-muted small mb-0 ms-4">{{ r.comment }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Bids List (for student owner / admin) -->
+      {% if bids %}
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between">
+          <h6 class="fw-700 mb-0"><i class="fas fa-gavel me-2 text-success"></i>Bids ({{ bids|length }})</h6>
+          {% if current_user.id == project.student_id %}
+          <a href="{{ url_for('student.project_bids', project_id=project.id) }}"
+             class="btn btn-sm btn-outline-success">Manage Bids</a>
+          {% endif %}
+        </div>
+        <div class="card-body p-0">
+          {% for bid in bids[:3] %}
+          <div class="p-3 {% if not loop.last %}border-bottom{% endif %}">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center gap-2">
+                <div class="nav-avatar small-avatar">{{ bid.helper.name[0].upper() }}</div>
+                <div>
+                  <div class="fw-600 small">{{ bid.helper.name }}</div>
+                  <div class="text-muted" style="font-size:11px">₹{{ bid.amount|int }} · {{ bid.delivery_days }} days</div>
+                </div>
+              </div>
+              <span class="badge status-{{ bid.status }}">{{ bid.status|title }}</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <!-- Project Info -->
+      <div class="card shadow-sm border-0 mb-4 sticky-top" style="top:80px">
+        <div class="card-body">
+          <h5 class="fw-700 mb-4 text-center">Project Details</h5>
+
+          <div class="d-flex flex-column gap-3 mb-4">
+            <div class="d-flex justify-content-between">
+              <span class="text-muted"><i class="fas fa-rupee-sign me-2"></i>Budget</span>
+              <strong class="text-success">₹{{ project.budget_min|int }}–{{ project.budget_max|int }}</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted"><i class="fas fa-calendar me-2"></i>Deadline</span>
+              <strong class="{% if project.is_overdue %}text-danger{% endif %}">
+                {{ project.deadline.strftime('%b %d, %Y') }}
+              </strong>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted"><i class="fas fa-gavel me-2"></i>Bids</span>
+              <strong>{{ project.bid_count }}</strong>
+            </div>
+            {% if project.lowest_bid %}
+            <div class="d-flex justify-content-between">
+              <span class="text-muted"><i class="fas fa-arrow-down me-2"></i>Lowest Bid</span>
+              <strong class="text-primary">₹{{ project.lowest_bid|int }}</strong>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- CTA Buttons -->
+          {% if current_user.is_authenticated %}
+            {% if current_user.role != 'admin' and project.status == 'open' and current_user.id != project.student_id %}
+              {% if user_bid and user_bid.status not in ('rejected','withdrawn') %}
+                <div class="alert alert-info text-center p-2 small mb-3">
+                  <i class="fas fa-check-circle me-1"></i>
+                  Your bid: ₹{{ user_bid.amount|int }} ({{ user_bid.status|title }})
+                </div>
+              {% else %}
+                <a href="{{ url_for('helper.place_bid', project_id=project.id) }}"
+                   class="btn btn-success w-100 btn-lg fw-600 mb-2">
+                  <i class="fas fa-gavel me-2"></i>Place a Bid
+                </a>
+              {% endif %}
+            {% endif %}
+
+            {% if current_user.id == project.student_id %}
+              {% if project.status == 'open' %}
+              <a href="{{ url_for('student.project_bids', project_id=project.id) }}"
+                 class="btn btn-primary w-100 mb-2">
+                <i class="fas fa-gavel me-2"></i>View All Bids
+              </a>
+              {% endif %}
+              {% if project.status == 'in_progress' %}
+              <form method="POST" action="{{ url_for('student.complete_project', project_id=project.id) }}"
+                    onsubmit="return confirm('Mark as completed?')">
+                <button type="submit" class="btn btn-success w-100 mb-2 fw-600">
+                  <i class="fas fa-check me-2"></i>Mark Complete
+                </button>
+              </form>
+              {% endif %}
+              {% if project.status == 'completed' and not already_reviewed %}
+              <a href="{{ url_for('student.review_project', project_id=project.id) }}"
+                 class="btn btn-warning w-100 mb-2">
+                <i class="fas fa-star me-2"></i>Leave Review
+              </a>
+              {% endif %}
+            {% endif %}
+
+            {% if project.selected_bid_id %}
+              {% set sel = project.selected_bid %}
+              {% if sel %}
+                {% set chat_uid = sel.helper_id if current_user.id == project.student_id else project.student_id %}
+                <a href="{{ url_for('main.chat', user_id=chat_uid, project_id=project.id) }}"
+                   class="btn btn-outline-primary w-100 mb-2">
+                  <i class="fas fa-comment me-2"></i>Open Chat
+                </a>
+              {% endif %}
+            {% elif current_user.id != project.student_id and current_user.role != 'admin' %}
+              <a href="{{ url_for('main.chat', user_id=project.student_id, project_id=project.id) }}"
+                 class="btn btn-outline-secondary w-100 mb-2">
+                <i class="fas fa-comment me-2"></i>Ask Client
+              </a>
+            {% endif %}
+          {% else %}
+          <a href="{{ url_for('auth.login') }}" class="btn btn-primary w-100 btn-lg fw-600">
+            <i class="fas fa-sign-in-alt me-2"></i>Login to Bid
+          </a>
+          {% endif %}
+
+          <!-- Report -->
+          {% if current_user.is_authenticated and current_user.id != project.student_id %}
+          <button class="btn btn-link text-muted btn-sm w-100 mt-2"
+                  data-bs-toggle="modal" data-bs-target="#reportModal">
+            <i class="fas fa-flag me-1"></i>Report this project
+          </button>
+          {% endif %}
+        </div>
+
+        <!-- Client Info -->
+        <div class="card-footer bg-white border-top">
+          <div class="d-flex align-items-center gap-3">
+            <div class="helper-avatar">{{ project.student.name[0].upper() }}</div>
+            <div>
+              <div class="fw-700">{{ project.student.name }}</div>
+              <div class="small text-muted">{{ project.student.college or 'Student' }}</div>
+              <div class="small text-warning">
+                {% set s = project.student.avg_rating|int %}{{ '★' * s }}{{ '☆' * (5-s) }}
+              </div>
+            </div>
+            <a href="{{ url_for('main.profile', user_id=project.student_id) }}"
+               class="btn btn-sm btn-outline-secondary ms-auto">Profile</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Report Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-700"><i class="fas fa-flag me-2 text-danger"></i>Report Project</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('main.submit_report') }}">
+        <div class="modal-body">
+          <input type="hidden" name="project_id" value="{{ project.id }}" />
+          <input type="hidden" name="reported_user_id" value="{{ project.student_id }}" />
+          <div class="mb-3">
+            <label class="form-label fw-600">Reason</label>
+            <select name="reason" class="form-select" required>
+              <option value="">Select reason…</option>
+              <option>Fake project</option>
+              <option>Inappropriate content</option>
+              <option>Spam</option>
+              <option>Fraud</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-600">Description</label>
+            <textarea name="description" class="form-control" rows="3" required
+                      placeholder="Describe the issue…"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Submit Report</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

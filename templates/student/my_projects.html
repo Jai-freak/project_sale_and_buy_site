@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block title %}My Projects — CampusMarket{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+    <div>
+      <h2 class="fw-800 mb-1"><i class="fas fa-folder text-primary me-2"></i>My Projects</h2>
+      <p class="text-muted mb-0">Manage all your posted projects</p>
+    </div>
+    <a href="{{ url_for('student.post_project') }}" class="btn btn-orange">
+      <i class="fas fa-plus me-2"></i>New Project
+    </a>
+  </div>
+
+  <!-- Status Filter -->
+  <div class="mb-4 d-flex flex-wrap gap-2">
+    {% for s, label in [('','All'),('open','Open'),('in_progress','In Progress'),('completed','Completed'),('cancelled','Cancelled')] %}
+    <a href="{{ url_for('student.my_projects', status=s) }}"
+       class="btn btn-sm {% if filter_status == s %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+      {{ label }}
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if projects %}
+  <div class="row g-4">
+    {% for p in projects %}
+    <div class="col-md-6 col-lg-4">
+      <div class="project-card h-100">
+        <div class="project-card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <span class="badge status-{{ p.status }}">{{ p.status.replace('_',' ')|title }}</span>
+            <small class="text-muted">{{ p.created_at.strftime('%b %d') }}</small>
+          </div>
+          <h5 class="fw-700 mb-2">
+            <a href="{{ url_for('main.project_detail', project_id=p.id) }}"
+               class="text-dark text-decoration-none">{{ p.title }}</a>
+          </h5>
+          <p class="text-muted small mb-3">
+            {{ p.description[:90] }}{% if p.description|length > 90 %}…{% endif %}
+          </p>
+
+          <div class="row g-2 small mb-3">
+            <div class="col-6">
+              <i class="fas fa-rupee-sign text-success me-1"></i>
+              <strong>₹{{ p.budget_min|int }}–{{ p.budget_max|int }}</strong>
+            </div>
+            <div class="col-6">
+              <i class="fas fa-calendar text-muted me-1"></i>
+              {{ p.deadline.strftime('%b %d, %Y') }}
+            </div>
+            <div class="col-6">
+              <i class="fas fa-gavel text-muted me-1"></i>
+              <a href="{{ url_for('student.project_bids', project_id=p.id) }}"
+                 class="text-decoration-none">{{ p.bid_count }} bid{{ 's' if p.bid_count != 1 }}</a>
+            </div>
+            {% if p.selected_bid %}
+            <div class="col-6">
+              <i class="fas fa-user-check text-success me-1"></i>
+              <small class="text-success fw-600">{{ p.selected_bid.helper.name }}</small>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="project-card-footer">
+          <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('main.project_detail', project_id=p.id) }}"
+               class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-eye me-1"></i>View
+            </a>
+            <a href="{{ url_for('student.project_bids', project_id=p.id) }}"
+               class="btn btn-sm btn-outline-secondary">
+              <i class="fas fa-gavel me-1"></i>Bids
+            </a>
+            {% if p.status == 'in_progress' %}
+            <form method="POST" action="{{ url_for('student.complete_project', project_id=p.id) }}"
+                  onsubmit="return confirm('Mark this project as completed?')">
+              <button type="submit" class="btn btn-sm btn-success">
+                <i class="fas fa-check me-1"></i>Complete
+              </button>
+            </form>
+            {% endif %}
+            {% if p.status in ('open','in_progress') %}
+            <form method="POST" action="{{ url_for('student.cancel_project', project_id=p.id) }}"
+                  onsubmit="return confirm('Cancel this project?')">
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="fas fa-times"></i>
+              </button>
+            </form>
+            {% endif %}
+            {% if p.status == 'completed' %}
+            <a href="{{ url_for('student.review_project', project_id=p.id) }}"
+               class="btn btn-sm btn-warning">
+              <i class="fas fa-star me-1"></i>Review
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-folder-open fa-4x text-muted mb-4"></i>
+    <h4 class="text-muted">No projects found</h4>
+    <p class="text-muted">
+      {% if filter_status %}Filter "{{ filter_status }}" returned no results.
+      {% else %}You haven't posted any projects yet.{% endif %}
+    </p>
+    <a href="{{ url_for('student.post_project') }}" class="btn btn-primary">Post a Project</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

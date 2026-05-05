@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from app import app; print\\('App imports OK'\\); print\\('Routes:', [str\\(r\\) for r in app.url_map.iter_rules\\(\\)][:8]\\)\")",
+      "Bash(python -c ' *)"
+    ]
+  }
+}

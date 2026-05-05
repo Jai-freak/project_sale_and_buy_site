@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Manage Projects — Admin{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="mb-4">
+    <h2 class="fw-800 mb-1"><i class="fas fa-project-diagram text-success me-2"></i>Manage Projects</h2>
+    <p class="text-muted mb-0">{{ projects.total }} projects total</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+      <form method="GET" class="row g-3 align-items-end">
+        <div class="col-md-5">
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
+            <input type="text" name="q" class="form-control" placeholder="Search projects…" value="{{ q }}" />
+          </div>
+        </div>
+        <div class="col-md-4">
+          <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            {% for s, l in [('open','Open'),('in_progress','In Progress'),('completed','Completed'),('cancelled','Cancelled')] %}
+            <option value="{{ s }}" {% if status==s %}selected{% endif %}>{{ l }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-success w-100"><i class="fas fa-filter me-1"></i>Filter</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr><th>#</th><th>Title</th><th>Student</th><th>Budget</th><th>Status</th><th>Bids</th><th>Approved</th><th>Posted</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {% for p in projects.items %}
+            <tr>
+              <td class="text-muted small">{{ p.id }}</td>
+              <td>
+                <a href="{{ url_for('main.project_detail', project_id=p.id) }}"
+                   class="fw-600 small text-decoration-none">
+                  {{ p.title[:40] }}{% if p.title|length > 40 %}…{% endif %}
+                </a>
+              </td>
+              <td class="small">{{ p.student.name }}</td>
+              <td class="small text-success fw-600">₹{{ p.budget_min|int }}–{{ p.budget_max|int }}</td>
+              <td><span class="badge status-{{ p.status }}">{{ p.status.replace('_',' ')|title }}</span></td>
+              <td class="text-center">{{ p.bid_count }}</td>
+              <td>
+                {% if p.is_approved %}
+                  <i class="fas fa-check-circle text-success"></i>
+                {% else %}
+                  <i class="fas fa-times-circle text-danger"></i>
+                {% endif %}
+              </td>
+              <td class="text-muted small">{{ p.created_at.strftime('%b %d, %Y') }}</td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <a href="{{ url_for('main.project_detail', project_id=p.id) }}"
+                     class="btn btn-outline-primary" title="View"><i class="fas fa-eye"></i></a>
+                  {% if not p.is_approved %}
+                  <form method="POST" action="{{ url_for('admin.approve_project', project_id=p.id) }}">
+                    <button type="submit" class="btn btn-outline-success" title="Approve">
+                      <i class="fas fa-check"></i>
+                    </button>
+                  </form>
+                  {% endif %}
+                  {% if p.status != 'cancelled' %}
+                  <form method="POST" action="{{ url_for('admin.delete_project', project_id=p.id) }}"
+                        onsubmit="return confirm('Cancel this project?')">
+                    <button type="submit" class="btn btn-outline-danger" title="Cancel">
+                      <i class="fas fa-ban"></i>
+                    </button>
+                  </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {% if projects.pages > 1 %}
+  <nav class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
+      {% if projects.has_prev %}
+      <li class="page-item"><a class="page-link" href="{{ url_for('admin.projects', page=projects.prev_num, q=q, status=status) }}"><i class="fas fa-chevron-left"></i></a></li>
+      {% endif %}
+      {% for p in projects.iter_pages() %}
+        {% if p %}<li class="page-item {% if p==projects.page %}active{% endif %}"><a class="page-link" href="{{ url_for('admin.projects', page=p, q=q, status=status) }}">{{ p }}</a></li>
+        {% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+      {% endfor %}
+      {% if projects.has_next %}
+      <li class="page-item"><a class="page-link" href="{{ url_for('admin.projects', page=projects.next_num, q=q, status=status) }}"><i class="fas fa-chevron-right"></i></a></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}

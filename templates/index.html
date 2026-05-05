@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% block title %}CampusMarket — Student Project Marketplace{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ──────────────────────────────────────────────────────────────── -->
+<section class="hero-section">
+  <div class="container py-5">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <span class="badge bg-orange-light text-orange fw-600 mb-3 px-3 py-2">
+          <i class="fas fa-star me-1"></i> #1 Campus Freelance Platform
+        </span>
+        <h1 class="display-4 fw-800 text-white lh-sm mb-4">
+          Turn Your Ideas Into<br>
+          <span class="text-orange">Real Projects</span>
+        </h1>
+        <p class="lead text-white-70 mb-5">
+          Post your project, get competitive bids from talented students and
+          freelancers, and get it done — fast, affordable, and reliable.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('auth.register') }}" class="btn btn-orange btn-lg px-5">
+              <i class="fas fa-rocket me-2"></i>Get Started Free
+            </a>
+            <a href="{{ url_for('main.browse_projects') }}" class="btn btn-outline-light btn-lg px-4">
+              Browse Projects
+            </a>
+          {% else %}
+            <a href="{{ url_for('student.post_project') }}" class="btn btn-orange btn-lg px-5">
+              <i class="fas fa-plus me-2"></i>Post a Project
+            </a>
+            <a href="{{ url_for('helper.browse') }}" class="btn btn-outline-light btn-lg px-4">
+              <i class="fas fa-search me-2"></i>Find Projects to Bid
+            </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-lg-6 d-none d-lg-block text-center">
+        <div class="hero-illustration">
+          <i class="fas fa-laptop-code fa-8x text-white-20"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Stats ─────────────────────────────────────────────────────────────── -->
+<section class="bg-white py-4 shadow-sm">
+  <div class="container">
+    <div class="row g-3 text-center">
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-number">{{ total_projects }}</div>
+          <div class="stat-label">Projects Posted</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-number">{{ total_helpers }}</div>
+          <div class="stat-label">Active Helpers</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-number">{{ total_students }}</div>
+          <div class="stat-label">Students</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-number">{{ completed }}</div>
+          <div class="stat-label">Completed</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How It Works ───────────────────────────────────────────────────────── -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h2 class="fw-800 text-dark">How It Works</h2>
+      <p class="text-muted">Simple 4-step process to get your project done</p>
+    </div>
+    <div class="row g-4 text-center">
+      {% set steps = [
+        ('1', 'fa-file-alt',    'Post Your Project',  'Describe your project, set a budget & deadline, and add required skills.'),
+        ('2', 'fa-gavel',       'Get Bids',           'Skilled helpers compete by sending proposals with their price & timeline.'),
+        ('3', 'fa-handshake',   'Choose a Helper',    'Review bids, chat with candidates, and pick the best fit for your project.'),
+        ('4', 'fa-star',        'Get It Done',        'Helper delivers work via file upload. Review, approve, and leave a rating.'),
+      ] %}
+      {% for num, icon, title, desc in steps %}
+      <div class="col-sm-6 col-lg-3">
+        <div class="how-card">
+          <div class="how-icon bg-primary-soft">
+            <i class="fas {{ icon }} text-primary fa-2x"></i>
+          </div>
+          <div class="step-badge">{{ num }}</div>
+          <h5 class="fw-700 mt-3">{{ title }}</h5>
+          <p class="text-muted small">{{ desc }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ── Recent Projects ────────────────────────────────────────────────────── -->
+{% if recent_projects %}
+<section class="py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="fw-800 mb-1">Recent Projects</h2>
+        <p class="text-muted mb-0">Jump in and start bidding</p>
+      </div>
+      <a href="{{ url_for('main.browse_projects') }}" class="btn btn-outline-primary">
+        View All <i class="fas fa-arrow-right ms-1"></i>
+      </a>
+    </div>
+    <div class="row g-4">
+      {% for project in recent_projects %}
+      <div class="col-md-6 col-lg-4">
+        <div class="project-card h-100">
+          <div class="project-card-body">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="badge status-open">Open</span>
+              <small class="text-muted">
+                <i class="far fa-clock me-1"></i>
+                {{ project.created_at.strftime('%b %d') }}
+              </small>
+            </div>
+            <h5 class="fw-700 mb-2">
+              <a href="{{ url_for('main.project_detail', project_id=project.id) }}"
+                 class="text-dark text-decoration-none stretched-link-inner">
+                {{ project.title }}
+              </a>
+            </h5>
+            <p class="text-muted small mb-3">
+              {{ project.description[:100] }}{% if project.description|length > 100 %}…{% endif %}
+            </p>
+            {% if project.skills_list %}
+            <div class="mb-3">
+              {% for skill in project.skills_list[:3] %}
+                <span class="skill-tag">{{ skill }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <div class="d-flex justify-content-between align-items-center mt-auto">
+              <div class="budget-badge">
+                <i class="fas fa-rupee-sign me-1"></i>
+                {% if project.budget_min == project.budget_max %}
+                  {{ project.budget_min|int }}
+                {% else %}
+                  {{ project.budget_min|int }} – {{ project.budget_max|int }}
+                {% endif %}
+              </div>
+              <div class="text-muted small">
+                <i class="fas fa-gavel me-1"></i>{{ project.bid_count }} bid{{ 's' if project.bid_count != 1 }}
+              </div>
+            </div>
+          </div>
+          <div class="project-card-footer">
+            <small class="text-muted">
+              <i class="fas fa-calendar-alt me-1"></i>Due {{ project.deadline.strftime('%b %d, %Y') }}
+            </small>
+            <a href="{{ url_for('main.project_detail', project_id=project.id) }}"
+               class="btn btn-sm btn-primary">View</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── Final CTA ───────────────────────────────────────────────────────────── -->
+<section class="py-5 bg-dark text-white text-center">
+  <div class="container" style="max-width:680px">
+    <i class="fas fa-graduation-cap fa-3x text-orange mb-4 d-block"></i>
+    <h2 class="fw-800 mb-3">One Account — Two Powers</h2>
+    <p class="text-white-70 mb-4 lead">
+      Every CampusMarket account can <strong>post projects</strong> and
+      <strong>bid on others' projects</strong> simultaneously.
+      No switching, no separate logins.
+    </p>
+    {% if not current_user.is_authenticated %}
+    <a href="{{ url_for('auth.register') }}" class="btn btn-orange btn-lg px-5">
+      <i class="fas fa-rocket me-2"></i>Create Free Account
+    </a>
+    {% else %}
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+      <a href="{{ url_for('student.post_project') }}" class="btn btn-orange btn-lg px-4">
+        <i class="fas fa-plus me-2"></i>Post a Project
+      </a>
+      <a href="{{ url_for('helper.browse') }}" class="btn btn-outline-light btn-lg px-4">
+        <i class="fas fa-search me-2"></i>Find Projects
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

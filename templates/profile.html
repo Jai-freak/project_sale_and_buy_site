@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}{{ profile_user.name }} — CampusMarket{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width:900px">
+  <div class="row g-4">
+    <!-- Left: Profile Card -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0 text-center">
+        <div class="card-body p-4">
+          <div class="profile-avatar mx-auto mb-3">{{ profile_user.name[0].upper() }}</div>
+          <h3 class="fw-800 mb-1">{{ profile_user.name }}</h3>
+          <span class="badge bg-primary-soft text-primary mb-2">
+            {{ 'Admin' if profile_user.role == 'admin' else 'Member' }}
+          </span>
+          {% if profile_user.college %}
+          <div class="text-muted small mb-2">
+            <i class="fas fa-university me-1"></i>{{ profile_user.college }}
+          </div>
+          {% endif %}
+          {% if profile_user.phone %}
+          <div class="text-muted small mb-2">
+            <i class="fas fa-phone me-1"></i>{{ profile_user.phone }}
+          </div>
+          {% endif %}
+
+          <!-- Rating -->
+          <div class="my-3 py-3 border-top border-bottom">
+            <div class="display-6 fw-800 text-warning">{{ profile_user.avg_rating }}</div>
+            <div class="text-warning fs-5">
+              {% set s = profile_user.avg_rating|int %}{{ '★' * s }}{{ '☆' * (5-s) }}
+            </div>
+            <div class="text-muted small">{{ profile_user.total_reviews }} review{{ 's' if profile_user.total_reviews != 1 }}</div>
+          </div>
+
+          <div class="row g-2 text-center mb-3">
+            <div class="col-6">
+              <div class="fw-800 text-primary fs-5">{{ completed }}</div>
+              <div class="text-muted small">Completed</div>
+            </div>
+            <div class="col-6">
+              <div class="fw-800 text-success fs-5">
+                {{ profile_user.created_at.strftime('%Y') }}
+              </div>
+              <div class="text-muted small">Member Since</div>
+            </div>
+          </div>
+
+          {% if current_user.is_authenticated and current_user.id != profile_user.id %}
+          <a href="{{ url_for('main.chat', user_id=profile_user.id) }}"
+             class="btn btn-primary w-100 mb-2">
+            <i class="fas fa-comment me-2"></i>Send Message
+          </a>
+          {% endif %}
+          {% if current_user.is_authenticated and current_user.id == profile_user.id %}
+          <a href="{{ url_for('main.edit_profile') }}" class="btn btn-outline-primary w-100">
+            <i class="fas fa-edit me-2"></i>Edit Profile
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Details -->
+    <div class="col-lg-8">
+      <!-- Bio -->
+      {% if profile_user.bio %}
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <h5 class="fw-700 mb-3"><i class="fas fa-user me-2 text-primary"></i>About</h5>
+          <p class="text-muted mb-0">{{ profile_user.bio }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Skills -->
+      {% if profile_user.skills_list %}
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <h5 class="fw-700 mb-3"><i class="fas fa-code me-2 text-success"></i>Skills</h5>
+          <div>
+            {% for skill in profile_user.skills_list %}
+            <span class="skill-tag skill-tag-lg">{{ skill }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Reviews -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+          <h5 class="fw-700 mb-0">
+            <i class="fas fa-star me-2 text-warning"></i>
+            Reviews ({{ reviews|length }})
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          {% if reviews %}
+            {% for r in reviews %}
+            <div class="p-4 {% if not loop.last %}border-bottom{% endif %}">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="nav-avatar small-avatar">{{ r.reviewer.name[0].upper() }}</div>
+                  <div>
+                    <div class="fw-700 small">{{ r.reviewer.name }}</div>
+                    <div class="text-muted" style="font-size:11px">
+                      {{ r.created_at.strftime('%B %d, %Y') }}
+                    </div>
+                  </div>
+                </div>
+                <div class="text-warning">{{ '★' * r.rating }}{{ '☆' * (5-r.rating) }}</div>
+              </div>
+              {% if r.comment %}
+              <p class="text-muted small mb-1 ms-5">{{ r.comment }}</p>
+              {% endif %}
+              <div class="ms-5">
+                <a href="{{ url_for('main.project_detail', project_id=r.project_id) }}"
+                   class="text-muted small text-decoration-none">
+                  <i class="fas fa-link me-1"></i>{{ r.project.title[:50] }}
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+          <div class="text-center py-5">
+            <i class="fas fa-star fa-3x text-muted mb-3 d-block"></i>
+            <p class="text-muted">No reviews yet.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

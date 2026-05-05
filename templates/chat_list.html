@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Messages — CampusMarket{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width:700px">
+  <h2 class="fw-800 mb-4"><i class="fas fa-comment-dots text-primary me-2"></i>Messages</h2>
+
+  {% if peers %}
+  <div class="card shadow-sm border-0">
+    {% for peer in peers %}
+    <a href="{{ url_for('main.chat', user_id=peer.id) }}"
+       class="chat-list-item {% if not loop.last %}border-bottom{% endif %} text-decoration-none">
+      <div class="helper-avatar">{{ peer.name[0].upper() }}</div>
+      <div class="flex-grow-1">
+        <div class="fw-700 text-dark">{{ peer.name }}</div>
+        <div class="small text-muted">{{ peer.role|title }} · {{ peer.college or 'Campus' }}</div>
+      </div>
+      <div class="text-end">
+        {% if peer.unread_messages > 0 %}
+        <span class="badge bg-primary">{{ peer.unread_messages }}</span>
+        {% endif %}
+        <i class="fas fa-chevron-right text-muted ms-2 small"></i>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-comment-slash fa-4x text-muted mb-4"></i>
+    <h4 class="text-muted">No conversations yet</h4>
+    <p class="text-muted">Start chatting from a project page.</p>
+    <a href="{{ url_for('main.browse_projects') }}" class="btn btn-primary">Browse Projects</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

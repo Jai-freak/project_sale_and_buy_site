@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block title %}Chat with {{ other.name }} — CampusMarket{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width:800px">
+  <!-- Header -->
+  <div class="card shadow-sm border-0 mb-3">
+    <div class="card-body py-3 d-flex align-items-center gap-3">
+      <a href="{{ url_for('main.chat_list') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+      <div class="helper-avatar">{{ other.name[0].upper() }}</div>
+      <div class="flex-grow-1">
+        <div class="fw-700">{{ other.name }}</div>
+        <div class="small text-muted">{{ other.role|title }}
+          {% if project %} · re: <em>{{ project.title[:40] }}</em>{% endif %}
+        </div>
+      </div>
+      <a href="{{ url_for('main.profile', user_id=other.id) }}"
+         class="btn btn-sm btn-outline-primary">Profile</a>
+    </div>
+  </div>
+
+  <!-- Message Window -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div id="chatWindow" class="chat-window p-4">
+        {% if messages %}
+          {% for msg in messages %}
+          <div class="chat-bubble-wrap {% if msg.sender_id == current_user.id %}chat-mine{% else %}chat-theirs{% endif %}"
+               data-msg-id="{{ msg.id }}">
+            <div class="chat-bubble">
+              {{ msg.content }}
+            </div>
+            <div class="chat-time">{{ msg.created_at.strftime('%H:%M') }}</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center text-muted py-5">
+            <i class="fas fa-comment-dots fa-3x mb-3 d-block text-muted"></i>
+            No messages yet. Say hello!
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Input -->
+      <div class="chat-input-area p-3 border-top">
+        <form method="POST" id="chatForm"
+              action="{{ url_for('main.chat', user_id=other.id, project_id=project.id if project else '') }}">
+          {% if project %}
+          <input type="hidden" name="project_id" value="{{ project.id }}" />
+          {% endif %}
+          <div class="input-group">
+            <input type="text" name="content" id="msgInput" class="form-control form-control-lg"
+                   placeholder="Type a message…" autocomplete="off" required />
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const chatWindow = document.getElementById('chatWindow');
+const myId       = {{ current_user.id }};
+const otherId    = {{ other.id }};
+{% if project %}const projectId = {{ project.id }};{% else %}const projectId = null;{% endif %}
+
+// Scroll to bottom on load
+chatWindow.scrollTop = chatWindow.scrollHeight;
+
+// Track last seen message id
+let lastId = 0;
+const msgs = chatWindow.querySelectorAll('[data-msg-id]');
+if (msgs.length) lastId = parseInt(msgs[msgs.length-1].dataset.msgId);
+
+function addBubble(msg) {
+  const wrap = document.createElement('div');
+  wrap.className = 'chat-bubble-wrap ' + (msg.sender_id === myId ? 'chat-mine' : 'chat-theirs');
+  wrap.dataset.msgId = msg.id;
+  wrap.innerHTML = `<div class="chat-bubble">${escHtml(msg.content)}</div><div class="chat-time">${msg.time}</div>`;
+  chatWindow.appendChild(wrap);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+  lastId = msg.id;
+}
+
+function escHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Poll for new messages every 4 seconds
+setInterval(() => {
+  fetch(`/chat/poll/${otherId}?since=${lastId}`)
+    .then(r => r.json())
+    .then(msgs => msgs.forEach(m => {
+      if (!chatWindow.querySelector(`[data-msg-id="${m.id}"]`)) addBubble(m);
+    }))
+    .catch(() => {});
+}, 4000);
+
+// Submit via AJAX to avoid full page reload
+document.getElementById('chatForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const inp = document.getElementById('msgInput');
+  const content = inp.value.trim();
+  if (!content) return;
+
+  const formData = new FormData(this);
+  fetch(this.action, { method: 'POST', body: formData })
+    .then(() => {
+      inp.value = '';
+      // bubble will appear on next poll; add immediately for UX
+      addBubble({ id: Date.now(), sender_id: myId, content, time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) });
+    });
+});
+</script>
+{% endblock %}

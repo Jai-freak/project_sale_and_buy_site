@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Review Client — CampusMarket{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width:600px">
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+      <h3 class="fw-800 mb-1"><i class="fas fa-star text-warning me-2"></i>Review Client</h3>
+      <p class="text-muted mb-4">Rate your experience working with <strong>{{ student.name }}</strong> on <em>{{ project.title }}</em></p>
+
+      <div class="d-flex align-items-center gap-3 mb-4 p-3 bg-light rounded-3">
+        <div class="helper-avatar helper-avatar-lg">{{ student.name[0].upper() }}</div>
+        <div>
+          <div class="fw-700">{{ student.name }}</div>
+          <div class="small text-muted">{{ student.college or 'Student' }}</div>
+        </div>
+      </div>
+
+      <form method="POST">
+        <div class="mb-4">
+          <label class="form-label fw-600">Rating <span class="text-danger">*</span></label>
+          <div class="d-flex gap-3 flex-wrap">
+            {% for val, label in [(1,'Poor'),(2,'Fair'),(3,'Good'),(4,'Great'),(5,'Excellent')] %}
+            <div>
+              <input type="radio" class="btn-check" name="rating" id="star{{ val }}" value="{{ val }}" required />
+              <label class="btn btn-outline-warning star-btn" for="star{{ val }}">
+                {{ '★' * val }}<br><small>{{ label }}</small>
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="form-label fw-600">Comment <span class="text-muted fw-400">(optional)</span></label>
+          <textarea name="comment" class="form-control" rows="4"
+                    placeholder="Was the client clear about requirements? Did they communicate well? Would you work with them again?"></textarea>
+        </div>
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn btn-warning btn-lg fw-600 px-5">
+            <i class="fas fa-star me-2"></i>Submit Review
+          </button>
+          <a href="{{ url_for('main.project_detail', project_id=project.id) }}"
+             class="btn btn-outline-secondary btn-lg">Skip</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

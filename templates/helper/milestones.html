@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}Milestones — {{ project.title }}{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width:800px">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('helper.dashboard') }}">Dashboard</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('main.project_detail', project_id=project.id) }}">{{ project.title[:40] }}</a></li>
+      <li class="breadcrumb-item active">Milestones</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+      <h2 class="fw-800 mb-1"><i class="fas fa-tasks text-primary me-2"></i>Milestones</h2>
+      <p class="text-muted mb-0">Break the project into manageable steps</p>
+    </div>
+    <span class="badge status-{{ project.status }} fs-6">{{ project.status.replace('_',' ')|title }}</span>
+  </div>
+
+  <!-- Add Milestone -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3">
+      <h6 class="fw-700 mb-0"><i class="fas fa-plus-circle text-success me-2"></i>Add Milestone</h6>
+    </div>
+    <div class="card-body">
+      <form method="POST">
+        <input type="hidden" name="action" value="add" />
+        <div class="row g-3">
+          <div class="col-md-5">
+            <input type="text" name="title" class="form-control" placeholder="Milestone title *" required />
+          </div>
+          <div class="col-md-3">
+            <div class="input-group">
+              <span class="input-group-text">₹</span>
+              <input type="number" name="amount" class="form-control" placeholder="Amount" min="0" />
+            </div>
+          </div>
+          <div class="col-md-3">
+            <input type="date" name="due_date" class="form-control" />
+          </div>
+          <div class="col-12">
+            <textarea name="description" class="form-control" rows="2"
+                      placeholder="Brief description (optional)"></textarea>
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-plus me-2"></i>Add Milestone
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Milestones List -->
+  {% if milestones %}
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+      <h6 class="fw-700 mb-0">
+        <i class="fas fa-list-check me-2 text-primary"></i>
+        Progress — {{ milestones|selectattr('status','equalto','completed')|list|length }}/{{ milestones|length }} completed
+      </h6>
+    </div>
+    <div class="card-body p-0">
+      {% for m in milestones %}
+      <div class="p-4 {% if not loop.last %}border-bottom{% endif %}
+                  {% if m.status == 'completed' %}bg-success-soft{% endif %}">
+        <div class="d-flex justify-content-between align-items-start gap-3">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="milestone-icon
+                {% if m.status == 'completed' %}bg-success{% elif m.status == 'in_progress' %}bg-warning{% else %}bg-light border{% endif %}">
+                <i class="fas {% if m.status == 'completed' %}fa-check{% elif m.status == 'in_progress' %}fa-spinner fa-spin{% else %}fa-circle{% endif %}
+                   {% if m.status == 'completed' %}text-white{% elif m.status == 'in_progress' %}text-dark{% else %}text-muted{% endif %}"></i>
+              </span>
+              <h6 class="fw-700 mb-0">{{ m.title }}</h6>
+              {% if m.amount %}
+              <span class="badge bg-success-soft text-success">₹{{ m.amount|int }}</span>
+              {% endif %}
+              {% if m.due_date %}
+              <span class="badge bg-light text-muted border">{{ m.due_date.strftime('%b %d') }}</span>
+              {% endif %}
+            </div>
+            {% if m.description %}
+            <p class="small text-muted mb-0 ms-4">{{ m.description }}</p>
+            {% endif %}
+          </div>
+          <form method="POST" class="d-flex gap-2 align-items-center">
+            <input type="hidden" name="action" value="update" />
+            <input type="hidden" name="milestone_id" value="{{ m.id }}" />
+            <select name="status" class="form-select form-select-sm" style="width:auto"
+                    onchange="this.form.submit()">
+              <option value="pending" {% if m.status=='pending' %}selected{% endif %}>Pending</option>
+              <option value="in_progress" {% if m.status=='in_progress' %}selected{% endif %}>In Progress</option>
+              <option value="completed" {% if m.status=='completed' %}selected{% endif %}>Completed</option>
+            </select>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-tasks fa-4x text-muted mb-4"></i>
+    <h4 class="text-muted">No milestones yet</h4>
+    <p class="text-muted">Add milestones above to track your progress.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

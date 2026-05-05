@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Reports — Admin{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="mb-4">
+    <h2 class="fw-800 mb-1"><i class="fas fa-flag text-danger me-2"></i>Reports & Disputes</h2>
+    <p class="text-muted mb-0">Review and resolve user-submitted reports</p>
+  </div>
+
+  <div class="mb-4 d-flex gap-2">
+    {% for s, label in [('open','Open'),('resolved','Resolved'),('dismissed','Dismissed')] %}
+    <a href="{{ url_for('admin.reports', status=s) }}"
+       class="btn btn-sm {% if status==s %}btn-danger{% else %}btn-outline-secondary{% endif %}">
+      {{ label }}
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if reports.items %}
+  <div class="row g-4">
+    {% for r in reports.items %}
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 {% if r.status=='open' %}border-start border-danger border-3{% endif %}">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+              <span class="badge bg-danger-soft text-danger mb-1">{{ r.reason }}</span>
+              <div class="small text-muted">
+                Reported by <strong>{{ r.reporter.name }}</strong>
+                on {{ r.created_at.strftime('%b %d, %Y') }}
+              </div>
+            </div>
+            <span class="badge status-{{ r.status }}">{{ r.status|title }}</span>
+          </div>
+
+          {% if r.reported_user %}
+          <div class="mb-2 small">
+            <span class="text-muted">Reported User:</span>
+            <a href="{{ url_for('main.profile', user_id=r.reported_user.id) }}" class="fw-600">
+              {{ r.reported_user.name }}
+            </a>
+          </div>
+          {% endif %}
+          {% if r.project_ref %}
+          <div class="mb-2 small">
+            <span class="text-muted">Project:</span>
+            <a href="{{ url_for('main.project_detail', project_id=r.project_ref.id) }}" class="fw-600">
+              {{ r.project_ref.title[:50] }}
+            </a>
+          </div>
+          {% endif %}
+
+          <div class="bg-light rounded p-3 mb-3 small">
+            {{ r.description }}
+          </div>
+
+          {% if r.status == 'open' %}
+          <div class="d-flex gap-2">
+            <form method="POST" action="{{ url_for('admin.resolve_report', report_id=r.id) }}">
+              <input type="hidden" name="action" value="resolved" />
+              <button type="submit" class="btn btn-sm btn-success fw-600">
+                <i class="fas fa-check me-1"></i>Resolve
+              </button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.resolve_report', report_id=r.id) }}">
+              <input type="hidden" name="action" value="dismissed" />
+              <button type="submit" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-times me-1"></i>Dismiss
+              </button>
+            </form>
+            {% if r.reported_user %}
+            <form method="POST" action="{{ url_for('admin.toggle_user', user_id=r.reported_user.id) }}"
+                  onsubmit="return confirm('Deactivate this user?')">
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="fas fa-ban me-1"></i>Ban User
+              </button>
+            </form>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-flag fa-4x text-muted mb-4"></i>
+    <h4 class="text-muted">No {{ status }} reports</h4>
+    <p class="text-muted">Everything looks clean!</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

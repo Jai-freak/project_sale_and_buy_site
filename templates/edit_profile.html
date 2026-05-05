@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profile — CampusMarket{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width:680px">
+  <div class="mb-4">
+    <h2 class="fw-800 mb-1"><i class="fas fa-user-edit text-primary me-2"></i>Edit Profile</h2>
+    <p class="text-muted mb-0">Update your public profile information</p>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+      <div class="text-center mb-4">
+        <div class="profile-avatar mx-auto mb-3">{{ current_user.name[0].upper() }}</div>
+        <div class="text-muted small">Profile picture upload coming soon</div>
+      </div>
+
+      <form method="POST">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-600">Full Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control"
+                   value="{{ current_user.name }}" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-600">Phone Number</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-phone text-muted"></i></span>
+              <input type="text" name="phone" class="form-control"
+                     placeholder="+91 98765 43210"
+                     value="{{ current_user.phone }}" />
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-600">College / University</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-university text-muted"></i></span>
+              <input type="text" name="college" class="form-control"
+                     placeholder="IIT Delhi, VIT, Anna University…"
+                     value="{{ current_user.college }}" />
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-600">
+              Bio
+              <span class="text-muted fw-400 small">— helps you win more bids</span>
+            </label>
+            <textarea name="bio" class="form-control" rows="4"
+                      placeholder="Tell clients/helpers about yourself, your background, and what you're good at…">{{ current_user.bio }}</textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-600">
+              Skills
+              <span class="text-muted fw-400 small">(comma-separated)</span>
+            </label>
+            <input type="text" name="skills" class="form-control"
+                   placeholder="Python, Machine Learning, React, MySQL…"
+                   value="{{ current_user.skills }}" />
+            <div class="mt-2 d-flex flex-wrap gap-1">
+              {% for s in ['Python','Flask','React','Node.js','Machine Learning','MySQL',
+                           'MongoDB','Android','Deep Learning','Data Analysis','Arduino','IoT'] %}
+              <span class="badge bg-light text-dark border skill-suggest" style="cursor:pointer">{{ s }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn btn-primary btn-lg fw-600 px-5">
+            <i class="fas fa-save me-2"></i>Save Changes
+          </button>
+          <a href="{{ url_for('main.profile', user_id=current_user.id) }}"
+             class="btn btn-outline-secondary btn-lg">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.skill-suggest').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const inp = document.querySelector('[name="skills"]');
+    const cur = inp.value.split(',').map(s => s.trim()).filter(Boolean);
+    if (!cur.includes(chip.textContent.trim())) {
+      cur.push(chip.textContent.trim());
+      inp.value = cur.join(', ');
+    }
+  });
+});
+</script>
+{% endblock %}

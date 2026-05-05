@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% block title %}Post a Project — CampusMarket{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width:780px">
+  <div class="mb-4">
+    <h2 class="fw-800"><i class="fas fa-plus-circle text-primary me-2"></i>Post a New Project</h2>
+    <p class="text-muted">Fill in the details and start receiving bids within minutes.</p>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+      <form method="POST" enctype="multipart/form-data" novalidate>
+
+        <!-- Title -->
+        <div class="mb-4">
+          <label class="form-label fw-600">Project Title <span class="text-danger">*</span></label>
+          <input type="text" name="title" class="form-control form-control-lg"
+                 placeholder="e.g. Python Flask Login System with JWT"
+                 value="{{ form_data.get('title','') }}" required />
+          <div class="form-text">Be specific — clear titles attract better helpers.</div>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-4">
+          <label class="form-label fw-600">Description <span class="text-danger">*</span></label>
+          <textarea name="description" class="form-control" rows="6"
+                    placeholder="Describe exactly what you need. Include technical requirements, references, expected output format, etc. (min 30 characters)"
+                    required>{{ form_data.get('description','') }}</textarea>
+          <div class="form-text d-flex justify-content-between">
+            <span>Minimum 30 characters.</span>
+            <span id="descCount" class="text-muted">0 chars</span>
+          </div>
+        </div>
+
+        <!-- Budget -->
+        <div class="mb-4">
+          <label class="form-label fw-600">Budget Range (₹) <span class="text-danger">*</span></label>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input type="number" name="budget_min" class="form-control"
+                       placeholder="Min (e.g. 500)"
+                       value="{{ form_data.get('budget_min','') }}" min="0" required />
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input type="number" name="budget_max" class="form-control"
+                       placeholder="Max (e.g. 2000)"
+                       value="{{ form_data.get('budget_max','') }}" min="0" required />
+              </div>
+            </div>
+          </div>
+          <!-- Quick pick buttons -->
+          <div class="mt-2 d-flex flex-wrap gap-2">
+            {% for lo, hi in [(500,1000),(1000,2000),(2000,5000),(5000,10000)] %}
+            <button type="button" class="btn btn-sm btn-outline-secondary budget-preset"
+                    data-min="{{ lo }}" data-max="{{ hi }}>
+              ₹{{ lo//1000 if lo >= 1000 else lo }}k–{{ hi//1000 }}k
+            </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Deadline -->
+        <div class="mb-4">
+          <label class="form-label fw-600">Deadline <span class="text-danger">*</span></label>
+          <input type="date" name="deadline" class="form-control"
+                 value="{{ form_data.get('deadline','') }}" required />
+          <div class="form-text">Must be a future date.</div>
+        </div>
+
+        <!-- Skills Required -->
+        <div class="mb-4">
+          <label class="form-label fw-600">Skills Required</label>
+          <input type="text" name="skills" class="form-control"
+                 placeholder="e.g. Python, Flask, MySQL, REST API"
+                 value="{{ form_data.get('skills','') }}" />
+          <div class="form-text">Comma-separated list of skills.</div>
+          <!-- Quick skill chips -->
+          <div class="mt-2 d-flex flex-wrap gap-1" id="skillSuggestions">
+            {% for s in ['Python','Machine Learning','Web Development','Flask','React','Node.js',
+                         'MySQL','MongoDB','Data Analysis','Android','Arduino','ML','Deep Learning'] %}
+            <span class="badge bg-light text-dark border skill-suggest" style="cursor:pointer">{{ s }}</span>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div class="mb-4">
+          <label class="form-label fw-600">Tags</label>
+          <input type="text" name="tags" class="form-control"
+                 placeholder="e.g. college-project, beginner-friendly, urgent"
+                 value="{{ form_data.get('tags','') }}" />
+          <div class="form-text">Comma-separated tags to help helpers find your project.</div>
+        </div>
+
+        <!-- Attachment -->
+        <div class="mb-4">
+          <label class="form-label fw-600">Attachment <span class="text-muted fw-400">(optional)</span></label>
+          <input type="file" name="attachment" class="form-control"
+                 accept=".pdf,.doc,.docx,.zip,.png,.jpg,.txt" />
+          <div class="form-text">Upload reference files, requirements docs, or wireframes (max 25 MB).</div>
+        </div>
+
+        <!-- Tips box -->
+        <div class="alert alert-info border-0 mb-4">
+          <strong><i class="fas fa-lightbulb me-2"></i>Tips for great bids:</strong>
+          <ul class="mb-0 mt-1 small">
+            <li>Mention if it's a college assignment or personal project.</li>
+            <li>Specify programming language/framework preferences.</li>
+            <li>Describe the expected deliverables clearly.</li>
+          </ul>
+        </div>
+
+        <div class="d-flex gap-3">
+          <button type="submit" class="btn btn-primary btn-lg px-5 fw-600">
+            <i class="fas fa-paper-plane me-2"></i>Post Project
+          </button>
+          <a href="{{ url_for('student.dashboard') }}" class="btn btn-outline-secondary btn-lg">
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Description counter
+const desc = document.querySelector('textarea[name="description"]');
+const cnt  = document.getElementById('descCount');
+desc.addEventListener('input', () => {
+  cnt.textContent = desc.value.length + ' chars';
+  cnt.className = desc.value.length >= 30 ? 'text-success' : 'text-danger';
+});
+
+// Budget presets
+document.querySelectorAll('.budget-preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelector('[name="budget_min"]').value = btn.dataset.min;
+    document.querySelector('[name="budget_max"]').value = btn.dataset.max;
+  });
+});
+
+// Skill suggestions
+document.querySelectorAll('.skill-suggest').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const inp = document.querySelector('[name="skills"]');
+    const current = inp.value.split(',').map(s => s.trim()).filter(Boolean);
+    if (!current.includes(chip.textContent)) {
+      current.push(chip.textContent);
+      inp.value = current.join(', ');
+    }
+  });
+});
+
+// Set min date to tomorrow
+const dl = document.querySelector('[name="deadline"]');
+const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+dl.min = tomorrow.toISOString().split('T')[0];
+</script>
+{% endblock %}

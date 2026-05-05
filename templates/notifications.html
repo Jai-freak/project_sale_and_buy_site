@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Notifications — CampusMarket{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width:760px">
+  <h2 class="fw-800 mb-4"><i class="fas fa-bell text-primary me-2"></i>Notifications</h2>
+
+  {% if notifs.items %}
+  <div class="card shadow-sm border-0">
+    {% for n in notifs.items %}
+    <div class="notif-item {% if not n.is_read %}notif-unread{% endif %}
+                {% if not loop.last %}border-bottom{% endif %}">
+      <div class="notif-icon bg-{{ n.notif_type }}-soft text-{{ n.notif_type }}">
+        <i class="fas fa-{% if n.notif_type=='success' %}check-circle{% elif n.notif_type=='warning' %}exclamation-triangle{% elif n.notif_type=='danger' %}times-circle{% else %}info-circle{% endif %}"></i>
+      </div>
+      <div class="flex-grow-1">
+        <div class="d-flex justify-content-between align-items-start">
+          <div class="fw-600 {% if not n.is_read %}text-dark{% else %}text-muted{% endif %}">{{ n.title }}</div>
+          <small class="text-muted ms-3 text-nowrap">{{ n.created_at.strftime('%b %d, %H:%M') }}</small>
+        </div>
+        <div class="small text-muted mt-1">{{ n.message }}</div>
+        {% if n.link %}
+        <a href="{{ n.link }}" class="small text-primary mt-1 d-inline-block">
+          View <i class="fas fa-arrow-right ms-1"></i>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if notifs.pages > 1 %}
+  <nav class="mt-4 d-flex justify-content-center">
+    <ul class="pagination pagination-sm">
+      {% if notifs.has_prev %}
+      <li class="page-item"><a class="page-link" href="{{ url_for('main.notifications', page=notifs.prev_num) }}"><i class="fas fa-chevron-left"></i></a></li>
+      {% endif %}
+      {% for p in notifs.iter_pages() %}
+        {% if p %}<li class="page-item {% if p==notifs.page %}active{% endif %}"><a class="page-link" href="{{ url_for('main.notifications', page=p) }}">{{ p }}</a></li>
+        {% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+      {% endfor %}
+      {% if notifs.has_next %}
+      <li class="page-item"><a class="page-link" href="{{ url_for('main.notifications', page=notifs.next_num) }}"><i class="fas fa-chevron-right"></i></a></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-bell-slash fa-4x text-muted mb-4"></i>
+    <h4 class="text-muted">No notifications yet</h4>
+    <p class="text-muted">You're all caught up!</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block title %}Browse Projects — CampusMarket{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="mb-4">
+    <h2 class="fw-800 mb-1"><i class="fas fa-search text-success me-2"></i>Browse Projects</h2>
+    <p class="text-muted mb-0">Find projects that match your skills and start bidding</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+      <form method="GET" class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label fw-600 small">Search</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search text-muted"></i></span>
+            <input type="text" name="q" class="form-control" placeholder="Keywords…" value="{{ q }}"/>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-600 small">Skill</label>
+          <input type="text" name="skill" class="form-control" placeholder="e.g. Python" value="{{ skill }}"/>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-600 small">Min Budget (₹)</label>
+          <input type="number" name="bmin" class="form-control" placeholder="0" value="{{ bmin or '' }}"/>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-600 small">Max Budget (₹)</label>
+          <input type="number" name="bmax" class="form-control" placeholder="Any" value="{{ bmax or '' }}"/>
+        </div>
+        <div class="col-md-1">
+          <button type="submit" class="btn btn-success w-100">
+            <i class="fas fa-filter"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Results count -->
+  <div class="mb-3 text-muted small">
+    Showing {{ projects.total }} project{{ 's' if projects.total != 1 }}
+    {% if q or skill %} for your search{% endif %}
+  </div>
+
+  {% if projects.items %}
+  <div class="row g-4">
+    {% for project in projects.items %}
+    <div class="col-md-6 col-lg-4">
+      <div class="project-card h-100">
+        <div class="project-card-body">
+          <div class="d-flex justify-content-between mb-2">
+            <span class="badge status-open">Open</span>
+            <small class="text-muted">{{ project.created_at.strftime('%b %d') }}</small>
+          </div>
+          <h5 class="fw-700 mb-2">
+            <a href="{{ url_for('main.project_detail', project_id=project.id) }}"
+               class="text-dark text-decoration-none">{{ project.title }}</a>
+          </h5>
+          <p class="text-muted small mb-3">
+            {{ project.description[:100] }}{% if project.description|length > 100 %}…{% endif %}
+          </p>
+          {% if project.skills_list %}
+          <div class="mb-3">
+            {% for sk in project.skills_list[:4] %}
+            <span class="skill-tag">{{ sk }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="budget-badge">
+              <i class="fas fa-rupee-sign me-1"></i>
+              {{ project.budget_min|int }}–{{ project.budget_max|int }}
+            </div>
+            <div class="text-muted small">
+              <i class="fas fa-calendar me-1"></i>{{ project.deadline.strftime('%b %d') }}
+            </div>
+          </div>
+        </div>
+        <div class="project-card-footer">
+          <div class="d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+              <i class="fas fa-gavel me-1"></i>{{ project.bid_count }} bid{{ 's' if project.bid_count != 1 }}
+              {% if project.lowest_bid %}
+              &nbsp;· Low: ₹{{ project.lowest_bid|int }}
+              {% endif %}
+            </small>
+            {% set my_bid = bid_map.get(project.id) %}
+            {% if my_bid and my_bid.status not in ('rejected','withdrawn') %}
+              <span class="badge status-{{ my_bid.status }}">Bid {{ my_bid.status|title }}</span>
+            {% else %}
+              <a href="{{ url_for('helper.place_bid', project_id=project.id) }}"
+                 class="btn btn-sm btn-success fw-600">
+                <i class="fas fa-gavel me-1"></i>Bid Now
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if projects.pages > 1 %}
+  <nav class="mt-5 d-flex justify-content-center">
+    <ul class="pagination">
+      {% if projects.has_prev %}
+      <li class="page-item">
+        <a class="page-link" href="{{ url_for('helper.browse', page=projects.prev_num, q=q, skill=skill, bmin=bmin, bmax=bmax) }}">
+          <i class="fas fa-chevron-left"></i>
+        </a>
+      </li>
+      {% endif %}
+      {% for p in projects.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+        {% if p %}
+        <li class="page-item {% if p == projects.page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('helper.browse', page=p, q=q, skill=skill, bmin=bmin, bmax=bmax) }}">{{ p }}</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
+      {% endfor %}
+      {% if projects.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="{{ url_for('helper.browse', page=projects.next_num, q=q, skill=skill, bmin=bmin, bmax=bmax) }}">
+          <i class="fas fa-chevron-right"></i>
+        </a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-search fa-4x text-muted mb-4"></i>
+    <h4 class="text-muted">No projects found</h4>
+    <p class="text-muted">Try adjusting your filters or check back later.</p>
+    <a href="{{ url_for('helper.browse') }}" class="btn btn-outline-success">Clear Filters</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

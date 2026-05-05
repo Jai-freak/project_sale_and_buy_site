@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Bids — {{ project.title }}{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{{ url_for('student.dashboard') }}">Dashboard</a></li>
+      <li class="breadcrumb-item"><a href="{{ url_for('student.my_projects') }}">My Projects</a></li>
+      <li class="breadcrumb-item active">Bids</li>
+    </ol>
+  </nav>
+
+  <!-- Project Summary -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <span class="badge status-{{ project.status }} mb-2">{{ project.status.replace('_',' ')|title }}</span>
+          <h3 class="fw-800 mb-1">{{ project.title }}</h3>
+          <p class="text-muted mb-0 small">
+            Budget: <strong class="text-success">₹{{ project.budget_min|int }}–{{ project.budget_max|int }}</strong>
+            &nbsp;|&nbsp; Deadline: {{ project.deadline.strftime('%b %d, %Y') }}
+            &nbsp;|&nbsp; <strong>{{ bids|length }}</strong> bid{{ 's' if bids|length != 1 }}
+          </p>
+        </div>
+        <a href="{{ url_for('main.project_detail', project_id=project.id) }}"
+           class="btn btn-outline-primary btn-sm">
+          <i class="fas fa-external-link-alt me-1"></i>View Project
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% if project.status == 'open' and bids %}
+  <div class="alert alert-info border-0 mb-4">
+    <i class="fas fa-info-circle me-2"></i>
+    Review the bids below. <strong>Chat with helpers</strong> before making a decision.
+    Accepting a bid will automatically reject all others.
+  </div>
+  {% endif %}
+
+  {% if bids %}
+  <div class="row g-4">
+    {% for bid in bids %}
+    <div class="col-lg-6">
+      <div class="bid-card {% if bid.status == 'accepted' %}bid-accepted{% elif bid.status == 'rejected' %}bid-rejected{% endif %}">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="helper-avatar">{{ bid.helper.name[0].upper() }}</div>
+            <div>
+              <a href="{{ url_for('main.profile', user_id=bid.helper.id) }}"
+                 class="fw-700 text-decoration-none text-dark">{{ bid.helper.name }}</a>
+              <div class="small text-muted">
+                {% if bid.helper.college %}{{ bid.helper.college }}{% endif %}
+              </div>
+              <div class="small">
+                {% set stars = bid.helper.avg_rating|int %}
+                <span class="text-warning">{{ '★' * stars }}{{ '☆' * (5-stars) }}</span>
+                <span class="text-muted">({{ bid.helper.total_reviews }})</span>
+              </div>
+            </div>
+          </div>
+          <span class="badge status-{{ bid.status }}">{{ bid.status|title }}</span>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-6">
+            <div class="bid-info-box">
+              <div class="bid-info-label">Bid Amount</div>
+              <div class="bid-info-value text-success">₹{{ bid.amount|int }}</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="bid-info-box">
+              <div class="bid-info-label">Delivery</div>
+              <div class="bid-info-value">{{ bid.delivery_days }} day{{ 's' if bid.delivery_days != 1 }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="fw-600 small mb-1 text-muted">Proposal</div>
+          <p class="mb-0 small">{{ bid.message }}</p>
+        </div>
+
+        {% if project.status == 'open' and bid.status == 'pending' %}
+        <div class="d-flex gap-2 flex-wrap">
+          <form method="POST" action="{{ url_for('student.accept_bid', bid_id=bid.id) }}"
+                onsubmit="return confirm('Accept this bid? Other bids will be rejected.')">
+            <button type="submit" class="btn btn-success btn-sm fw-600">
+              <i class="fas fa-check me-1"></i>Accept Bid
+            </button>
+          </form>
+          <form method="POST" action="{{ url_for('student.reject_bid', bid_id=bid.id) }}"
+                onsubmit="return confirm('Reject this bid?')">
+            <button type="submit" class="btn btn-outline-danger btn-sm">
+              <i class="fas fa-times me-1"></i>Reject
+            </button>
+          </form>
+          <a href="{{ url_for('main.chat', user_id=bid.helper_id, project_id=project.id) }}"
+             class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-comment me-1"></i>Chat
+          </a>
+          <a href="{{ url_for('main.profile', user_id=bid.helper_id) }}"
+             class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-user me-1"></i>Profile
+          </a>
+        </div>
+        {% elif bid.status == 'accepted' %}
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('main.chat', user_id=bid.helper_id, project_id=project.id) }}"
+             class="btn btn-primary btn-sm">
+            <i class="fas fa-comment me-1"></i>Message Helper
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-gavel fa-4x text-muted mb-4"></i>
+    <h4 class="text-muted">No bids yet</h4>
+    <p class="text-muted">Your project is live. Helpers will start bidding soon!</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

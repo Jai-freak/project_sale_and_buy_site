@@ -1,0 +1,17 @@
+How to Run — Step by Step
+Step 1 — Open Terminal in the project folder
+Right-click inside project market folder → "Open in Terminal" (or open CMD/PowerShell and type):
+
+cd "C:\Users\admin\OneDrive\Desktop\project market" - your folder path
+
+Step 2 — Install dependencies (only once)
+pip install -r requirements.txt
+
+Step 3 — Run the app
+python app.py
+You'll see:
+
+Default admin created: admin@marketplace.com / Admin@123
+ * Running on http://127.0.0.1:5000
+Step 4 — Open in browser
+Go to: http://localhost:5000
